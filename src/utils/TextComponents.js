@@ -1,41 +1,34 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
+import tw from '../../tw';
 
 export function Title({ children, style }) {
-  return <Text style={[styles.title, style]}>{children}</Text>;
+  return (
+    <Text style={[tw`text-4xl font-bold text-blue-900 mb-2`, style]}>
+      {children}
+    </Text>
+  );
 }
-export function TitleTwo({ children, style }) {
-  return <Text style={[styles.titletwo, style]}>{children}</Text>;
-}
+
+ 
+ 
 
 export function Subtitle({ children, style }) {
-  return <Text style={[styles.subtitle, style]}>{children}</Text>;
-}
-export function SubtitleTwo({ children, style }) {
-  return <Text style={[styles.subtitletwo, style]}>{children}</Text>;
+  return (
+    <Text style={[tw`text-base text-blue-900 mb-6`, style]}>
+      {children}
+    </Text>
+  );
+} 
+
+export function TitleTwo({ children, style }) {
+  return <Text style={[tw`text-4xl font-bold text-white mb-2 text-center`, style]}>{children}</Text>;
 }
 
-const styles = StyleSheet.create({
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1E40AF',
-    marginBottom: 8,
-  },
-  titletwo: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#ffffffff',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#1E40AF',
-    marginBottom: 24,
-  },
-  subtitletwo: {
-    fontSize: 16,
-   color: '#ffffffff',
-    marginBottom: 24,
-  },
-});
+export function SubtitleTwo({ children, style }) {
+  return <Text style={[tw`text-base text-white mb-6 text-center`, style]}>{children}</Text>;
+}
+
+export function DisplayText({ children, style }) {
+  return <Text style={[tw`text-base text-black mb-6 text-center`, style]}>{children}</Text>;
+}

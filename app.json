@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "safetyapp",
-    "slug": "safetyapp",
+    "name": "Safe Ubuntu",
+    "slug": "safetyubuntu",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/2345470.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -21,14 +21,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/2345470.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.yourcompany.safetyapp",
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/2345470.png",
       "bundler": "metro"
     },
     "plugins": [

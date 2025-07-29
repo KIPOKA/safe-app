@@ -1,47 +1,28 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text } from 'react-native';
+import tw from '../../../../tw';
 
-export default function Button({ title, onPress, style, textStyle, disabled = false }) {
+export default function Button({
+  title,
+  onPress,
+  style,
+  textStyle,
+  disabled = false,
+}) {
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.button,
+        tw`bg-blue-600 py-3 px-6 rounded-xl shadow-md items-center`,
+        pressed && tw`opacity-70`,
+        disabled && tw`bg-gray-400`,
         style,
-        pressed && styles.pressed,
-        disabled && styles.disabled,
       ]}
       onPress={onPress}
       disabled={disabled}
     >
-      <Text style={[styles.text, textStyle]}>
+      <Text style={[tw`text-white font-bold text-base`, textStyle]}>
         {title}
       </Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: '#2563EB', // blue
-    paddingVertical: 14,
-    paddingHorizontal: 48,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    alignItems: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  disabled: {
-    backgroundColor: '#a0aec0',
-  },
-  text: {
-    color: 'white',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-});

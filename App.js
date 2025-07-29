@@ -14,7 +14,6 @@ export default function App() {
   if (isLoading) {
     return <SplashScreen onAnimationComplete={handleSplashComplete} />;
   }
-
   // Show main app content after splash
   return (
     <>
