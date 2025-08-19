@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text } from 'react-native';
-import tw from '../../../../tw';
+import tw from '../../tw';
 
 export default function Button({
   title,

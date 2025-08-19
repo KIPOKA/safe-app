@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import InputField from '../components/input/InputField';
 import { SubtitleTwo, TitleTwo } from '../utils/TextComponents';
-import Button from '../components/input/button/Button';
+
 import tw from '../../tw';
 
 export default function Register({ navigation }) {
@@ -60,12 +60,7 @@ export default function Register({ navigation }) {
           secureTextEntry
         />
 
-        <Button
-          title="Register"
-          onPress={handleRegister}
-          style={tw`bg-blue-600`}
-          textStyle={tw`text-white text-lg`}
-        />
+    
 
         <Pressable onPress={handleLogin} style={tw `items-center`}>
           <Text style={tw`text-white mt-4 text-sm`}>

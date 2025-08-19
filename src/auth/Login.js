@@ -10,11 +10,8 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import tw from '../../tw';
+import { LinearGradient } from 'expo-linear-gradient'; 
 import InputField from '../components/input/InputField';
-import { Title, Subtitle } from '../utils/TextComponents';
-import Button from '../components/input/button/Button';
 
 const { width, height } = Dimensions.get('window');
 
