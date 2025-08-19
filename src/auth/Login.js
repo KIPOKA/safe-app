@@ -15,6 +15,7 @@ import InputField from '../components/input/InputField';
 
 const { width, height } = Dimensions.get('window');
 
+
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
