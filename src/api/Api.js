@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 // api.js
 
 const API_URL = "https://a8a6c83b1819.ngrok-free.app/api";
@@ -211,6 +210,46 @@ export const getEmergencyDetails = async () => {
     return data;
   } catch (error) {
     console.error("Error fetching emergencies details", error);
+    throw error;
+  }
+};
+
+// api/Api.js
+export const createNotification = async ({
+  fromUserId,
+  emergencyTypeId,
+  latitude,
+  longitude,
+  city,
+  country,
+  description,
+}) => {
+  try {
+    const response = await fetch(`${API_URL}/notifications/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fromUserId,
+        emergencyTypeId,
+        latitude,
+        longitude,
+        city,
+        country,
+        description,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to create notification");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating notification:", error);
     throw error;
   }
 };

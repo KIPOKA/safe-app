@@ -4,21 +4,29 @@ import {
   Vibration,
   Animated,
   TouchableOpacity,
-  View,
-  Text,
+  Alert,
 } from "react-native";
+import * as Location from "expo-location";
 import { LinearGradient } from "expo-linear-gradient";
 import { MessageSquare } from "lucide-react-native";
-import HeaderSection from "../../components/home/HeaderSection";
-import EmergencyButton from "../../components/home/EmergencyButton";
-import QuickActions from "../../components/home/QuickActions";
-import EmergencyModal from "../../components/home/EmergencyModal";
-import ChatBotModal from "../../components/home/ChatBotModal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import {
+  HeaderSection,
+  EmergencyButton,
+  EmergencyModal,
+  ChatBotModal,
+} from "../../components/home/index";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "../../../tw";
-import { getEmergencyDetails } from "../../api/Api";
+import {
+  getEmergencyDetails,
+  createNotification,
+  getUserByEmail,
+} from "../../api/Api";
 import { getColorForType, getIconForType } from "../../utils/TextComponents";
-export default function Home() {
+
+export default function Home({ navigation }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -26,19 +34,80 @@ export default function Home() {
   const [chatVisible, setChatVisible] = useState(false);
   const [chatBotVisible, setChatBotVisible] = useState(false);
   const [emergencyTypes, setEmergencyTypes] = useState([]);
+  const [location, setLocation] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
 
-  // Fetch emergencies from API on mount
+  // Request location permission on mount
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission denied",
+          "Location permission is required to send emergency alerts."
+        );
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({});
+      setLocation(loc.coords);
+
+      const [address] = await Location.reverseGeocodeAsync({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+
+      if (address) {
+        setCity(address.city || "");
+        setCountry(address.country || "");
+      }
+    })();
+  }, []);
+
+  // Fetch user ID from session
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const email = await AsyncStorage.getItem("userEmail");
+        if (!email) {
+          Alert.alert("Error", "User session expired. Please login again.");
+          navigation.replace("login");
+          return;
+        }
+
+        const user = await getUserByEmail(email);
+        if (!user?.id) {
+          Alert.alert("Error", "Failed to get user ID");
+          return;
+        }
+
+        console.log("Fetched user:", user);
+        setUserId(user.id);
+      } catch (err) {
+        console.error("Failed to fetch user ID:", err);
+      }
+    };
+
+    fetchUserId();
+  }, []);
+
+  // Fetch emergencies from API
   useEffect(() => {
     const fetchEmergencies = async () => {
       try {
         const data = await getEmergencyDetails();
-        // Map API data to match EmergencyModal expected format (add color/icon if needed)
-        const mappedData = data.emergencyTypes.map((item, index) => ({
+
+        const mappedData = data.emergencyTypes.map((item) => ({
+          id: item.emergency_id, // ✅ backend ID
           type: item.name,
+          description: item.description,
           icon: getIconForType(item.name),
           color: getColorForType(item.name),
-          description: item.description,
         }));
+
+        console.log("Loaded emergency types:", mappedData);
         setEmergencyTypes(mappedData);
       } catch (error) {
         console.error("Failed to fetch emergencies:", error);
@@ -53,11 +122,57 @@ export default function Home() {
     setModalVisible(true);
   };
 
-  const handleSelectEmergency = (type) => {
+  const handleSelectEmergency = async (emergencyType) => {
+    // Find the emergency object by type string
+    const emergency = emergencyTypes.find((e) => e.type === emergencyType);
+
+    if (!emergency) {
+      Alert.alert("Error", "Selected emergency type is invalid.");
+      return;
+    }
+
+    const emergencyId = emergency.id || emergency.iid;
+    const emergencyTypeName = emergency.type;
+
+    if (!emergencyId || !emergencyTypeName) {
+      Alert.alert("Error", "Selected emergency type is invalid.");
+      return;
+    }
+
+    if (!location || !userId) {
+      Alert.alert(
+        "Data missing",
+        "Cannot send alert without user ID or location."
+      );
+      return;
+    }
+
     setModalVisible(false);
     setChatVisible(true);
     Vibration.vibrate([0, 200, 100, 200]);
-    setTimeout(() => alert(`🚨 Emergency Alert Sent: ${type}!`), 500);
+
+    const payload = {
+      fromUserId: userId,
+      emergencyTypeId: emergencyId,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      city: city,
+      country: country,
+      description: `Emergency Alert: ${emergencyTypeName}`,
+    };
+
+    console.log("📦 Notification payload:", payload);
+
+    try {
+      await createNotification(payload);
+      Alert.alert(
+        "Alert Sent",
+        `🚨 Emergency Alert Sent: ${emergencyTypeName}!`
+      );
+    } catch (error) {
+      console.error("❌ Error creating notification:", error);
+      Alert.alert("Failed", "Failed to send emergency alert");
+    }
   };
 
   const handleChatPress = () => setChatBotVisible(true);
@@ -75,7 +190,6 @@ export default function Home() {
           style={tw`flex-1 justify-center items-center px-6 py-10`}
         >
           <HeaderSection />
-          {/* <QuickActions /> */}
           <EmergencyButton
             scaleAnim={scaleAnim}
             pulseAnim={pulseAnim}
@@ -87,7 +201,7 @@ export default function Home() {
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
           emergencyTypes={emergencyTypes}
-          onSelect={handleSelectEmergency}
+          onSelect={(emergency) => handleSelectEmergency(emergency)}
         />
 
         {chatVisible && (

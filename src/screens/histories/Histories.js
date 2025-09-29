@@ -16,6 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import tw from "../../../tw";
 import { getNotificationsByEmail } from "../../api/Api";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getIconForType, getColorForType } from "../../utils/TextComponents";
 
 export default function Histories() {
   const [notifications, setNotifications] = useState([]);
@@ -80,31 +81,27 @@ export default function Histories() {
       case "resolved":
       case "completed":
         return { bg: "#10B981", light: "#D1FAE5", text: "#065F46", icon: "✓" };
+
       case "pending":
         return { bg: "#F59E0B", light: "#FEF3C7", text: "#92400E", icon: "⏳" };
+
       case "read":
       case "in progress":
         return { bg: "#3B82F6", light: "#DBEAFE", text: "#1E40AF", icon: "👁" };
+
       case "active":
       case "emergency":
         return { bg: "#EF4444", light: "#FEE2E2", text: "#991B1B", icon: "🚨" };
+
+      case "dismissed":
+        return { bg: "#9CA3AF", light: "#E5E7EB", text: "#374151", icon: "✖" };
+
       default:
         return { bg: "#6B7280", light: "#F3F4F6", text: "#1F2937", icon: "•" };
     }
   };
 
-  const getEmergencyIcon = (name) => {
-    const icons = {
-      "Medical Emergency": "🏥",
-      "Fire Emergency": "🔥",
-      "Natural Disaster": "🌪️",
-      "Crime/Violence": "🚔",
-      "Power Outage": "⚡",
-      Accident: "🚗",
-      "Chemical Spill": "☢️",
-    };
-    return icons[name] || "🚨";
-  };
+  // Removed old getEmergencyIcon function
 
   const handleCallContact = (phone) => {
     Linking.openURL(`tel:${phone}`);
@@ -130,7 +127,7 @@ export default function Histories() {
     return date.toLocaleDateString();
   };
 
-  const filters = ["All", "Pending", "Read", "Resolved"];
+  const filters = ["All", "Pending", "Read", "Resolved", "Dismissed"];
 
   const openDetailModal = (item) => {
     setSelectedNotification(item);
@@ -174,7 +171,8 @@ export default function Histories() {
 
   const renderCompactItem = ({ item }) => {
     const statusColors = getStatusColor(item.status?.name);
-    const emergencyIcon = getEmergencyIcon(item.emergencyType?.name);
+    const emergencyIcon = getIconForType(item.emergencyType?.name || "");
+    const emergencyColor = getColorForType(item.emergencyType?.name || "");
 
     return (
       <TouchableOpacity
@@ -188,7 +186,9 @@ export default function Histories() {
           {/* Header Row */}
           <View style={tw`flex-row justify-between items-start mb-2`}>
             <View style={tw`flex-1 flex-row items-center`}>
-              <Text style={tw`text-3xl mr-2`}>{emergencyIcon}</Text>
+              <Text style={[tw`text-3xl mr-2`, { color: emergencyColor }]}>
+                {emergencyIcon}
+              </Text>
               <View style={tw`flex-1`}>
                 <Text
                   style={tw`text-gray-900 font-bold text-lg`}
@@ -266,7 +266,8 @@ export default function Histories() {
     if (!selectedNotification) return null;
     const item = selectedNotification;
     const statusColors = getStatusColor(item.status?.name);
-    const emergencyIcon = getEmergencyIcon(item.emergencyType?.name);
+    const emergencyIcon = getIconForType(item.emergencyType?.name || "");
+    const emergencyColor = getColorForType(item.emergencyType?.name || "");
 
     return (
       <Modal
@@ -287,7 +288,9 @@ export default function Histories() {
               </TouchableOpacity>
 
               <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-5xl mr-3`}>{emergencyIcon}</Text>
+                <Text style={[tw`text-5xl mr-3`, { color: emergencyColor }]}>
+                  {emergencyIcon}
+                </Text>
                 <View style={tw`flex-1`}>
                   <Text style={tw`text-white font-bold text-2xl`}>
                     {item.emergencyType?.name}
@@ -518,7 +521,6 @@ export default function Histories() {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={tw`flex-1 bg-indigo-600`}>
       {/* Header */}
