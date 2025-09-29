@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   Text,
-  Pressable, 
+  Pressable,
   KeyboardAvoidingView,
   Platform,
   View,
@@ -9,18 +9,18 @@ import {
   Dimensions,
   ScrollView,
   StatusBar,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient'; 
-import InputField from '../components/input/InputField';
-
-const { width, height } = Dimensions.get('window');
-
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import InputField from "../components/input/InputField";
+import { loginUser } from "../api/Api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+const { width, height } = Dimensions.get("window");
 
 export default function Login({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -56,13 +56,38 @@ export default function Login({ navigation }) {
   }, []);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      alert("Please enter both email and password");
+      return;
+    }
+
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      // Call reusable API function
+      const data = await loginUser({ email, password });
+
+      // Ensure token and email exist
+      const userEmail = data?.user?.email;
+      if (!data?.token || !userEmail) {
+        throw new Error("Invalid login response from server");
+      }
+
+      // Save token and email in AsyncStorage
+      await AsyncStorage.setItem("userToken", data.token);
+      await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+      await AsyncStorage.setItem("userEmail", userEmail);
+
+      console.log("User logged in:", userEmail, JSON.stringify(data.user));
+
+      // Navigate to main screen
+      navigation.replace("main", { user: data.user });
+    } catch (error) {
+      console.error("Login failed:", error.message);
+      alert(error.message || "Login failed");
+    } finally {
       setIsLoading(false);
-      navigation.navigate("main");
-    }, 1500);
+    }
   };
 
   return (
@@ -70,9 +95,9 @@ export default function Login({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -85,16 +110,13 @@ export default function Login({ navigation }) {
           </View>
 
           {/* Top Section */}
-          <Animated.View 
+          <Animated.View
             style={[
               styles.topSection,
               {
                 opacity: fadeAnim,
-                transform: [
-                  { translateY: slideAnim },
-                  { scale: scaleAnim }
-                ]
-              }
+                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+              },
             ]}
           >
             <View style={styles.welcomeContainer}>
@@ -122,12 +144,12 @@ export default function Login({ navigation }) {
             style={[
               styles.bottomSheet,
               {
-                transform: [{ translateY: bottomSheetAnim }]
-              }
+                transform: [{ translateY: bottomSheetAnim }],
+              },
             ]}
           >
             <LinearGradient
-              colors={['#0F172A', '#1E293B', '#334155']}
+              colors={["#0F172A", "#1E293B", "#334155"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.gradientContainer}
@@ -136,7 +158,9 @@ export default function Login({ navigation }) {
               <View style={styles.formHeader}>
                 <View style={styles.handleBar} />
                 <Text style={styles.formTitle}>Sign In</Text>
-                <Text style={styles.formSubtitle}>Enter your credentials to continue</Text>
+                <Text style={styles.formSubtitle}>
+                  Enter your credentials to continue
+                </Text>
               </View>
 
               {/* Input Fields */}
@@ -174,19 +198,21 @@ export default function Login({ navigation }) {
 
                 {/* Forgot Password */}
                 <Pressable style={styles.forgotPasswordContainer}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                  <Text style={styles.forgotPasswordText}>
+                    Forgot Password?
+                  </Text>
                 </Pressable>
               </View>
 
               {/* Login Button */}
               <View style={styles.buttonContainer}>
-                <Pressable 
+                <Pressable
                   style={styles.loginButton}
                   onPress={handleLogin}
                   disabled={isLoading}
                 >
                   <LinearGradient
-                    colors={['#3B82F6', '#1E40AF', '#1E3A8A']}
+                    colors={["#3B82F6", "#1E40AF", "#1E3A8A"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.loginButtonGradient}
@@ -194,7 +220,9 @@ export default function Login({ navigation }) {
                     {isLoading ? (
                       <View style={styles.loadingContainer}>
                         <View style={styles.loadingSpinner} />
-                        <Text style={styles.loginButtonText}>Signing In...</Text>
+                        <Text style={styles.loginButtonText}>
+                          Signing In...
+                        </Text>
                       </View>
                     ) : (
                       <>
@@ -205,15 +233,14 @@ export default function Login({ navigation }) {
                   </LinearGradient>
                 </Pressable>
 
-                
-
                 {/* Register Link */}
-                <Pressable 
+                <Pressable
                   style={styles.registerContainer}
-                  onPress={() => navigation.navigate('register')}
+                  onPress={() => navigation.navigate("register")}
                 >
                   <Text style={styles.registerText}>
-                    Don't have an account? <Text style={styles.registerLink}>Create one</Text>
+                    Don't have an account?{" "}
+                    <Text style={styles.registerLink}>Create one</Text>
                   </Text>
                 </Pressable>
               </View>
@@ -228,94 +255,94 @@ export default function Login({ navigation }) {
 const styles = {
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
   },
   scrollContainer: {
     flexGrow: 1,
   },
   backgroundDecorations: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
+    position: "absolute",
+    width: "100%",
+    height: "100%",
   },
   circle: {
-    position: 'absolute',
+    position: "absolute",
     borderRadius: 999,
     opacity: 0.06,
   },
   circle1: {
     width: 180,
     height: 180,
-    backgroundColor: '#3B82F6',
+    backgroundColor: "#3B82F6",
     top: -40,
     right: -60,
   },
   circle2: {
     width: 120,
     height: 120,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: "#8B5CF6",
     top: 80,
     left: -40,
   },
   circle3: {
     width: 80,
     height: 80,
-    backgroundColor: '#06B6D4',
+    backgroundColor: "#06B6D4",
     top: 160,
     right: 40,
   },
   topSection: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 32,
     paddingTop: 60,
     minHeight: height * 0.4,
   },
   welcomeContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
   },
   welcomeTitle: {
     fontSize: 32,
-    fontWeight: '900',
-    color: '#1E293B',
+    fontWeight: "900",
+    color: "#1E293B",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
     letterSpacing: -0.5,
   },
   welcomeSubtitle: {
     fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
+    color: "#64748B",
+    textAlign: "center",
     lineHeight: 24,
     paddingHorizontal: 16,
   },
   badgeContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 16,
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: "rgba(59, 130, 246, 0.2)",
   },
   badgeIcon: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: "#3B82F6",
     marginRight: 6,
   },
   badgeText: {
     fontSize: 12,
-    color: '#3B82F6',
-    fontWeight: '600',
+    color: "#3B82F6",
+    fontWeight: "600",
   },
   bottomSheet: {
     flex: 1,
@@ -328,33 +355,33 @@ const styles = {
     paddingTop: 24,
     paddingHorizontal: 32,
     paddingBottom: 32,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 10,
   },
   formHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 32,
   },
   handleBar: {
     width: 40,
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     borderRadius: 2,
     marginBottom: 24,
   },
   formTitle: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: "800",
+    color: "#FFFFFF",
     marginBottom: 8,
   },
   formSubtitle: {
     fontSize: 14,
-    color: '#CBD5E1',
-    textAlign: 'center',
+    color: "#CBD5E1",
+    textAlign: "center",
   },
   inputContainer: {
     marginBottom: 24,
@@ -364,134 +391,134 @@ const styles = {
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#F1F5F9',
+    fontWeight: "600",
+    color: "#F1F5F9",
     marginBottom: 8,
     marginLeft: 4,
   },
   enhancedInputField: {
-    position: 'relative',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    position: "relative",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    overflow: 'hidden',
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    overflow: "hidden",
   },
   input: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
   inputIcon: {
-    position: 'absolute',
+    position: "absolute",
     right: 16,
-    top: '50%',
+    top: "50%",
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#3B82F6',
+    backgroundColor: "#3B82F6",
     transform: [{ translateY: -3 }],
   },
   forgotPasswordContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     marginTop: 8,
   },
   forgotPasswordText: {
-    color: '#3B82F6',
+    color: "#3B82F6",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   buttonContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   loginButton: {
     borderRadius: 20,
     marginBottom: 24,
-    shadowColor: '#1E40AF',
+    shadowColor: "#1E40AF",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },
   loginButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 18,
     paddingHorizontal: 32,
     borderRadius: 20,
   },
   loginButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     marginRight: 8,
     letterSpacing: 0.5,
   },
   loginButtonArrow: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: '300',
+    fontWeight: "300",
   },
   loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   loadingSpinner: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    borderTopColor: '#FFFFFF',
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderTopColor: "#FFFFFF",
     marginRight: 8,
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   dividerText: {
-    color: '#94A3B8',
+    color: "#94A3B8",
     fontSize: 12,
     paddingHorizontal: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   socialContainer: {
     gap: 12,
     marginBottom: 24,
   },
   socialButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: "rgba(255, 255, 255, 0.2)",
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   socialButtonText: {
-    color: '#F1F5F9',
+    color: "#F1F5F9",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   registerContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 8,
   },
   registerText: {
-    color: '#94A3B8',
+    color: "#94A3B8",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   registerLink: {
-    color: '#3B82F6',
-    fontWeight: '600',
+    color: "#3B82F6",
+    fontWeight: "600",
   },
 };

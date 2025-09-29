@@ -1,0 +1,182 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+// api.js
+
+const API_URL = "https://a8a6c83b1819.ngrok-free.app/api";
+
+// Existing registerUser function
+export const registerUser = async ({ fullName, email, password }) => {
+  try {
+    const response = await fetch(`${API_URL}/users/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fullName, email, password }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Registration failed");
+    return data;
+  } catch (error) {
+    console.error("API error:", error.message);
+    throw error;
+  }
+};
+
+// New loginUser function
+// Updated loginUser function
+export const loginUser = async ({ email, password }) => {
+  try {
+    const response = await fetch(`${API_URL}/users/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const text = await response.text();
+    console.log("RAW LOGIN RESPONSE:", text);
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      throw new Error("Server returned invalid JSON. Response: " + text);
+    }
+
+    if (!response.ok) throw new Error(data.error || "Login failed");
+
+    return data;
+  } catch (error) {
+    console.error("API error:", error.message);
+    throw error;
+  }
+};
+
+// Update user profile
+export const updateProfile = async ({
+  email,
+  cellNumber,
+  address,
+  bloodType,
+  allergies,
+  conditions,
+  medicalAid,
+  userRole,
+  emergencyContacts,
+}) => {
+  try {
+    const response = await fetch(`${API_URL}/users/update-profile`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        // optionally include auth token if needed:
+      },
+      body: JSON.stringify({
+        email,
+        cellNumber,
+        address,
+        bloodType,
+        allergies,
+        conditions,
+        medicalAid,
+        userRole,
+        emergencyContacts,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Profile update failed");
+    return data; // { message, user }
+  } catch (error) {
+    console.error("API error:", error.message);
+    throw error;
+  }
+};
+
+export const getMedicalAids = async () => {
+  try {
+    const response = await fetch(`${API_URL}/medical-aids`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(data.error || "Failed to fetch medical aids");
+
+    return data.medicalAids;
+  } catch (error) {
+    console.error("API error:", error.message);
+    throw error;
+  }
+};
+
+// Get all blood types
+export const getBloodTypes = async () => {
+  try {
+    const response = await fetch(`${API_URL}/blood/bloodTypes`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok)
+      throw new Error(data.error || "Failed to fetch blood types");
+    return data; // [{ id, blood_id, type }, ...]
+  } catch (error) {
+    console.error("API error:", error.message);
+    throw error;
+  }
+};
+// Get user by email
+export const getUserByEmail = async (email) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/users/${encodeURIComponent(email)}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const data = await response.json();
+    console.log(data);
+
+    if (!response.ok) throw new Error(data.error || "Failed to fetch user");
+
+    return data;
+  } catch (error) {
+    console.error("API error:", error.message);
+    throw error;
+  }
+};
+
+// Logout user
+export const logoutUser = async () => {
+  try {
+    const response = await fetch(`${API_URL}/users/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // If using auth token:
+        // Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Logout failed");
+
+    // Clear local session storage (optional, but recommended in frontend)
+    await AsyncStorage.removeItem("userToken");
+    await AsyncStorage.removeItem("userData");
+    await AsyncStorage.removeItem("userEmail");
+
+    return data; // { message: "Logout successful" }
+  } catch (error) {
+    console.error("API error:", error.message);
+    throw error;
+  }
+};
