@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import InputField from "../components/input/InputField";
 import { loginUser } from "../api/Api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import tw from "../../tw";
 const { width, height } = Dimensions.get("window");
 
 export default function Login({ navigation }) {
@@ -94,8 +95,8 @@ export default function Login({ navigation }) {
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
       <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={tw`flex-1 mt-15 bg-white rounded-t-2xl`}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContainer}

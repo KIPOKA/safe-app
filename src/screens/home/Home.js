@@ -39,6 +39,10 @@ export default function Home({ navigation }) {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
 
+  // NEW: Chat state
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState("");
+
   // Request location permission on mount
   useEffect(() => {
     (async () => {
@@ -82,8 +86,6 @@ export default function Home({ navigation }) {
           Alert.alert("Error", "Failed to get user ID");
           return;
         }
-
-        console.log("Fetched user:", user);
         setUserId(user.id);
       } catch (err) {
         console.error("Failed to fetch user ID:", err);
@@ -100,14 +102,13 @@ export default function Home({ navigation }) {
         const data = await getEmergencyDetails();
 
         const mappedData = data.emergencyTypes.map((item) => ({
-          id: item.emergency_id, // ✅ backend ID
+          id: item.emergency_id,
           type: item.name,
           description: item.description,
           icon: getIconForType(item.name),
           color: getColorForType(item.name),
         }));
 
-        console.log("Loaded emergency types:", mappedData);
         setEmergencyTypes(mappedData);
       } catch (error) {
         console.error("Failed to fetch emergencies:", error);
@@ -123,7 +124,6 @@ export default function Home({ navigation }) {
   };
 
   const handleSelectEmergency = async (emergencyType) => {
-    // Find the emergency object by type string
     const emergency = emergencyTypes.find((e) => e.type === emergencyType);
 
     if (!emergency) {
@@ -131,7 +131,7 @@ export default function Home({ navigation }) {
       return;
     }
 
-    const emergencyId = emergency.id || emergency.iid;
+    const emergencyId = emergency.id;
     const emergencyTypeName = emergency.type;
 
     if (!emergencyId || !emergencyTypeName) {
@@ -161,8 +161,6 @@ export default function Home({ navigation }) {
       description: `Emergency Alert: ${emergencyTypeName}`,
     };
 
-    console.log("📦 Notification payload:", payload);
-
     try {
       await createNotification(payload);
       Alert.alert(
@@ -177,9 +175,21 @@ export default function Home({ navigation }) {
 
   const handleChatPress = () => setChatBotVisible(true);
 
+  // NEW: handle sending chat message
+  const handleSendMessage = (text) => {
+    if (!text.trim()) return;
+    const newMessage = {
+      id: Date.now().toString(),
+      text,
+      user: { fullName: "You" },
+    };
+    setMessages([newMessage, ...messages]);
+    setInputText("");
+  };
+
   return (
-    <SafeAreaView style={tw`flex-1`}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+    <SafeAreaView style={tw`flex-1 mb-[-15px]`}>
+      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />{" "}
       <LinearGradient
         colors={["#0F172A", "#1E293B", "#334155"]}
         style={tw`flex-1`}
@@ -215,7 +225,9 @@ export default function Home({ navigation }) {
 
         <ChatBotModal
           visible={chatBotVisible}
-          onClose={() => setChatBotVisible(false)}
+          messages={messages}
+          setMessages={setMessages}
+          sendMessage={() => handleSendMessage(inputText)}
         />
       </LinearGradient>
     </SafeAreaView>

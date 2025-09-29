@@ -1,9 +1,37 @@
-import React from "react";
-import { View, Text } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Alert } from "react-native";
 import { Shield, MapPin } from "lucide-react-native";
+import * as Location from "expo-location";
+import NetInfo from "@react-native-community/netinfo";
 import tw from "../../../tw";
 
 export default function HeaderSection() {
+  const [isOnline, setIsOnline] = useState(false);
+  const [location, setLocation] = useState(null);
+
+  useEffect(() => {
+    // Subscribe to network status changes
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOnline(state.isConnected);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Request location permission and get location
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission denied", "Location access is required.");
+        return;
+      }
+
+      const userLocation = await Location.getCurrentPositionAsync({});
+      setLocation(userLocation.coords);
+    })();
+  }, []);
+
   return (
     <View style={tw`items-center mb-10`}>
       {/* Title */}
@@ -22,21 +50,54 @@ export default function HeaderSection() {
       </Text>
 
       {/* Status badges */}
-      <View style={tw`flex-row mt-5 space-x-4`}>
+      <View style={tw`flex-row mt-5`}>
         {/* Online Badge */}
         <View
-          style={tw`flex-row items-center bg-green-200/20 px-3 py-1 rounded-lg border border-green-200/30`}
+          style={[
+            tw`flex-row items-center px-3 py-1 rounded-lg border mr-4`,
+            isOnline
+              ? tw`bg-green-200/20 border-green-200/30`
+              : tw`bg-red-200/20 border-red-200/30`,
+          ]}
         >
-          <View style={tw`w-2 h-2 bg-green-500 rounded-full mr-1.5`} />
-          <Text style={tw`text-green-500 text-xs font-semibold`}>Online</Text>
+          <View
+            style={[
+              tw`w-2 h-2 rounded-full mr-1.5`,
+              { backgroundColor: isOnline ? "#22C55E" : "#EF4444" },
+            ]}
+          />
+          <Text
+            style={[
+              tw`text-xs font-semibold`,
+              { color: isOnline ? "#22C55E" : "#EF4444" },
+            ]}
+          >
+            {isOnline ? "Online" : "Offline"}
+          </Text>
         </View>
 
         {/* Located Badge */}
         <View
-          style={tw`flex-row items-center bg-blue-200/20 px-3 py-1 rounded-lg border border-blue-200/30`}
+          style={[
+            tw`flex-row items-center px-3 py-1 rounded-lg border`,
+            location
+              ? tw`bg-blue-200/20 border-blue-200/30`
+              : tw`bg-gray-200/20 border-gray-200/30`,
+          ]}
         >
-          <MapPin size={12} color="#3B82F6" style={tw`mr-1`} />
-          <Text style={tw`text-blue-500 text-xs font-semibold`}>Located</Text>
+          <MapPin
+            size={12}
+            color={location ? "#3B82F6" : "#9CA3AF"}
+            style={tw`mr-1`}
+          />
+          <Text
+            style={[
+              tw`text-xs font-semibold`,
+              { color: location ? "#3B82F6" : "#9CA3AF" },
+            ]}
+          >
+            {location ? "Located" : "Locating..."}
+          </Text>
         </View>
       </View>
     </View>

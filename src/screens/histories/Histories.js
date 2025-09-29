@@ -522,7 +522,7 @@ export default function Histories() {
     );
   }
   return (
-    <SafeAreaView style={tw`flex-1 bg-indigo-600`}>
+    <SafeAreaView style={tw`flex-1 bg-blue-600`}>
       {/* Header */}
       <View style={tw`px-6 pt-4 pb-3`}>
         <Text style={tw`text-3xl font-extrabold text-white mb-1`}>

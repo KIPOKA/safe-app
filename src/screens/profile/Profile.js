@@ -247,7 +247,7 @@ export default function Profile({ navigation }) {
         };
 
         setProfileData(updatedData);
-        setOriginalProfileData(updatedData); // Update original data
+        setOriginalProfileData(updatedData);
       }
 
       setIsEditing(false);
@@ -468,7 +468,7 @@ export default function Profile({ navigation }) {
   }
 
   return (
-    <ScrollView style={tw`flex-1 bg-blue-600`}>
+    <ScrollView style={tw`flex-1 bg-blue-500 mb-[-15px]`}>
       <SafeAreaView style={tw`flex-1`}>
         {/* Header */}
         <View

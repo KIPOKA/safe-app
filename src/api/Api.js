@@ -179,6 +179,32 @@ export const logoutUser = async () => {
   }
 };
 
+export const changePassword = async ({ email, oldPassword, newPassword }) => {
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+
+    const response = await fetch(`${API_URL}/users/update-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ email, oldPassword, newPassword }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok)
+      throw new Error(data.error || "Failed to change password");
+
+    return data;
+  } catch (error) {
+    console.error("Change password API error:", error);
+    throw error;
+  }
+};
+
+// Get the notification by email of the user
 export const getNotificationsByEmail = async (email) => {
   try {
     const response = await fetch(`${API_URL}/notifications/email/${email}`);

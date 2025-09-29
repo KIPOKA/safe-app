@@ -35,16 +35,10 @@ export default function NavigationController() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={userToken ? "main" : "GetStarted"}
-        screenOptions={{ headerShown: false }}
-      >
-        {!userToken && (
-          <Stack.Screen name="GetStarted" component={GetStarted} />
-        )}
-        {!userToken && <Stack.Screen name="login" component={Login} />}
-        {!userToken && <Stack.Screen name="register" component={Register} />}
-
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="GetStarted" component={GetStarted} />
+        <Stack.Screen name="login" component={Login} />
+        <Stack.Screen name="register" component={Register} />
         <Stack.Screen name="main" component={BottomTabNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
