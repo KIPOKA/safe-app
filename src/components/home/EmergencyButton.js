@@ -38,6 +38,14 @@ export default function EmergencyButton({ scaleAnim, pulseAnim, onPress }) {
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
+      <View style={tw`bg-white/10 rounded-2xl p-5 mb-8 border border-white/20`}>
+        <Text
+          style={tw`text-gray-200 text-base text-center leading-6 font-medium`}
+        >
+          Press the emergency button to instantly connect with local emergency
+          services. Your location will be shared automatically.
+        </Text>
+      </View>
     </View>
   );
 }

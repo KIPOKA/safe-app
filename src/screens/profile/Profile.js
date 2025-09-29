@@ -72,7 +72,6 @@ export default function Profile({ navigation }) {
   const fetchBloodTypes = async () => {
     try {
       const data = await getBloodTypes();
-      console.log("Fetched blood types:", data);
       setBloodTypes(data.bloodTypes || []);
     } catch (err) {
       console.error("Failed to fetch blood types:", err);
@@ -83,7 +82,6 @@ export default function Profile({ navigation }) {
   const fetchMedicalAids = async () => {
     try {
       const data = await getMedicalAids();
-      console.log("Fetched medical aids raw:", data);
 
       // Handle different response formats
       if (Array.isArray(data)) {
@@ -227,8 +225,6 @@ export default function Profile({ navigation }) {
         userRole: profileData.userRole || null,
         emergencyContacts,
       };
-
-      console.log("Sending update data:", updateData);
 
       const response = await updateProfile(updateData);
 
@@ -391,7 +387,6 @@ export default function Profile({ navigation }) {
 
   const renderDropdownOptions = (field) => {
     if (field.key === "bloodType") {
-      console.log("Rendering blood types:", bloodTypes);
       return bloodTypes.map((item) => (
         <Picker.Item
           key={item.id || item.type}
@@ -429,7 +424,6 @@ export default function Profile({ navigation }) {
             <Picker
               selectedValue={profileData[field.key]}
               onValueChange={(value) => {
-                console.log(`Selected ${field.key}:`, value);
                 handleInputChange(field.key, value);
               }}
               style={tw`h-12`}

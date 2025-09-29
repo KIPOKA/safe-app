@@ -1,15 +1,23 @@
-import React, { useRef, useState } from "react";
-import { StatusBar, Vibration, Animated } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Audio } from "expo-av";
-import tw from "../../../tw";
-import Alarm from "../../../assets/alarm.mp3";
+import React, { useRef, useEffect, useState } from "react";
+import {
+  StatusBar,
+  Vibration,
+  Animated,
+  TouchableOpacity,
+  View,
+  Text,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { MessageSquare } from "lucide-react-native";
 import HeaderSection from "../../components/home/HeaderSection";
 import EmergencyButton from "../../components/home/EmergencyButton";
 import QuickActions from "../../components/home/QuickActions";
 import EmergencyModal from "../../components/home/EmergencyModal";
 import ChatBotModal from "../../components/home/ChatBotModal";
-
+import { SafeAreaView } from "react-native-safe-area-context";
+import tw from "../../../tw";
+import { getEmergencyDetails } from "../../api/Api";
+import { getColorForType, getIconForType } from "../../utils/TextComponents";
 export default function Home() {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -17,50 +25,31 @@ export default function Home() {
   const [modalVisible, setModalVisible] = useState(false);
   const [chatVisible, setChatVisible] = useState(false);
   const [chatBotVisible, setChatBotVisible] = useState(false);
-  const [sound, setSound] = useState(null);
+  const [emergencyTypes, setEmergencyTypes] = useState([]);
 
-  const emergencyTypes = [
-    {
-      type: "Medical Emergency",
-      icon: "🚑",
-      color: "#EF4444",
-      description: "Ambulance & Medical Care",
-    },
-    {
-      type: "Police Assistance",
-      icon: "🚔",
-      color: "#3B82F6",
-      description: "Law Enforcement Help",
-    },
-    {
-      type: "Fire Emergency",
-      icon: "🚒",
-      color: "#F59E0B",
-      description: "Fire Department Response",
-    },
-    {
-      type: "General Emergency",
-      icon: "⚠️",
-      color: "#8B5CF6",
-      description: "Other Emergency Services",
-    },
-  ];
-
-  const handleAlertPress = async () => {
-    // Vibrate the phone
-    Vibration.vibrate([0, 100, 50, 100]);
-
-    // Play emergency ringtone
-    const { sound } = await Audio.Sound.createAsync(
-      require("../../../assets/alarm.mp3"),
-      {
-        shouldPlay: true,
-        isLooping: true,
+  // Fetch emergencies from API on mount
+  useEffect(() => {
+    const fetchEmergencies = async () => {
+      try {
+        const data = await getEmergencyDetails();
+        // Map API data to match EmergencyModal expected format (add color/icon if needed)
+        const mappedData = data.emergencyTypes.map((item, index) => ({
+          type: item.name,
+          icon: getIconForType(item.name),
+          color: getColorForType(item.name),
+          description: item.description,
+        }));
+        setEmergencyTypes(mappedData);
+      } catch (error) {
+        console.error("Failed to fetch emergencies:", error);
       }
-    );
-    setSound(sound);
+    };
 
-    // Show modal
+    fetchEmergencies();
+  }, []);
+
+  const handleAlertPress = () => {
+    Vibration.vibrate([0, 100, 50, 100]);
     setModalVisible(true);
   };
 
@@ -69,59 +58,52 @@ export default function Home() {
     setChatVisible(true);
     Vibration.vibrate([0, 200, 100, 200]);
     setTimeout(() => alert(`🚨 Emergency Alert Sent: ${type}!`), 500);
-
-    // Stop the ringtone when emergency is selected
-    if (sound) {
-      sound.stopAsync();
-    }
   };
 
-  const handleChatPress = () => {
-    setChatBotVisible(true);
-  };
-
-  // Clean up sound when component unmounts
-  React.useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
+  const handleChatPress = () => setChatBotVisible(true);
 
   return (
     <SafeAreaView style={tw`flex-1`}>
       <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+      <LinearGradient
+        colors={["#0F172A", "#1E293B", "#334155"]}
+        style={tw`flex-1`}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Animated.View
+          style={tw`flex-1 justify-center items-center px-6 py-10`}
+        >
+          <HeaderSection />
+          {/* <QuickActions /> */}
+          <EmergencyButton
+            scaleAnim={scaleAnim}
+            pulseAnim={pulseAnim}
+            onPress={handleAlertPress}
+          />
+        </Animated.View>
 
-      <Animated.View style={tw`flex-1 justify-center items-center px-6 py-10`}>
-        <HeaderSection />
-        <EmergencyButton
-          scaleAnim={scaleAnim}
-          pulseAnim={pulseAnim}
-          onPress={handleAlertPress}
+        <EmergencyModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          emergencyTypes={emergencyTypes}
+          onSelect={handleSelectEmergency}
         />
-      </Animated.View>
 
-      <EmergencyModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        emergencyTypes={emergencyTypes}
-        onSelect={handleSelectEmergency}
-      />
+        {chatVisible && (
+          <TouchableOpacity
+            style={tw`absolute bottom-10 right-5 bg-blue-500 w-16 h-16 rounded-full justify-center items-center shadow-lg`}
+            onPress={handleChatPress}
+          >
+            <MessageSquare size={28} color="white" />
+          </TouchableOpacity>
+        )}
 
-      {chatVisible && !chatBotVisible && (
         <ChatBotModal
-          scaleAnim={scaleAnim}
-          pulseAnim={pulseAnim}
-          onPress={handleChatPress}
+          visible={chatBotVisible}
+          onClose={() => setChatBotVisible(false)}
         />
-      )}
-
-      <ChatBotModal
-        visible={chatBotVisible}
-        onClose={() => setChatBotVisible(false)}
-      />
-      <QuickActions />
+      </LinearGradient>
     </SafeAreaView>
   );
 }

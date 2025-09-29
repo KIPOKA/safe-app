@@ -191,9 +191,26 @@ export const getNotificationsByEmail = async (email) => {
     }
 
     const data = await response.json();
-    return data; // { notifications: [...] }
+    return data;
   } catch (error) {
     console.error("Error fetching notifications by email:", error);
+    throw error;
+  }
+};
+
+export const getEmergencyDetails = async () => {
+  try {
+    const response = await fetch(`${API_URL}/emergencies`);
+    if (!response.ok) {
+      throw new Error(
+        console.error("Error fetching emergencies details", error)
+      );
+    }
+    const data = await response.json();
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching emergencies details", error);
     throw error;
   }
 };
