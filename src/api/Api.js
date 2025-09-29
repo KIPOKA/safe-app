@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 // api.js
 
 const API_URL = "https://a8a6c83b1819.ngrok-free.app/api";
@@ -32,7 +33,6 @@ export const loginUser = async ({ email, password }) => {
     });
 
     const text = await response.text();
-    console.log("RAW LOGIN RESPONSE:", text);
 
     let data;
     try {
@@ -143,7 +143,6 @@ export const getUserByEmail = async (email) => {
     );
 
     const data = await response.json();
-    console.log(data);
 
     if (!response.ok) throw new Error(data.error || "Failed to fetch user");
 
@@ -177,6 +176,24 @@ export const logoutUser = async () => {
     return data; // { message: "Logout successful" }
   } catch (error) {
     console.error("API error:", error.message);
+    throw error;
+  }
+};
+
+export const getNotificationsByEmail = async (email) => {
+  try {
+    const response = await fetch(`${API_URL}/notifications/email/${email}`);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    return data; // { notifications: [...] }
+  } catch (error) {
+    console.error("Error fetching notifications by email:", error);
     throw error;
   }
 };
