@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // api.js
 
-const API_URL = "https://a8a6c83b1819.ngrok-free.app/api";
+const API_URL = "https://f6a394498aa7.ngrok-free.app/api";
 
 // Existing registerUser function
 export const registerUser = async ({ fullName, email, password }) => {
@@ -21,7 +21,6 @@ export const registerUser = async ({ fullName, email, password }) => {
   }
 };
 
-// New loginUser function
 // Updated loginUser function
 export const loginUser = async ({ email, password }) => {
   try {
@@ -276,6 +275,43 @@ export const createNotification = async ({
     return data;
   } catch (error) {
     console.error("Error creating notification:", error);
+    throw error;
+  }
+};
+
+export const sendMessageToChatBot = async ({
+  message,
+  conversationHistory = [],
+  email,
+}) => {
+  try {
+    if (!email) throw new Error("User email is required");
+    if (!message || !message.trim()) throw new Error("Message is required");
+
+    const response = await fetch(`${API_URL}/chat/message`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: message.trim(),
+        conversationHistory,
+        email,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.error || "Failed to send message");
+
+    return {
+      success: data.success,
+      aiResponse: data.response,
+      timestamp: data.timestamp,
+      queryInfo: data.queryInfo,
+    };
+  } catch (error) {
+    console.error("ChatBot API Error:", error.message);
     throw error;
   }
 };

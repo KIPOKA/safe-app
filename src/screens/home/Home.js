@@ -186,6 +186,10 @@ export default function Home({ navigation }) {
     setMessages([newMessage, ...messages]);
     setInputText("");
   };
+  // Function to close chat modal
+  const handleCloseChatModal = () => {
+    setChatBotVisible(false);
+  };
 
   return (
     <SafeAreaView style={tw`flex-1 mb-[-15px]`}>
@@ -228,6 +232,7 @@ export default function Home({ navigation }) {
           messages={messages}
           setMessages={setMessages}
           sendMessage={() => handleSendMessage(inputText)}
+          onClose={handleCloseChatModal}
         />
       </LinearGradient>
     </SafeAreaView>

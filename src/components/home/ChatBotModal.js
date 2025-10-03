@@ -5,13 +5,29 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  Text,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Text,
 } from "react-native";
-import { MessageSquare, Send, Trash2 } from "lucide-react-native";
+import { Send, Trash2, ArrowLeft } from "lucide-react-native";
 import tw from "../../../tw";
+import { sendMessageToChatBot } from "../../api/Api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Helper function to format timestamp
+const formatTimeAgo = (timestamp) => {
+  const now = new Date();
+  const msgTime = new Date(timestamp);
+  const diff = Math.floor((now - msgTime) / 1000); // difference in seconds
+
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  return `${Math.floor(diff / 86400)} day${
+    Math.floor(diff / 86400) > 1 ? "s" : ""
+  } ago`;
+};
 
 export default function ChatBotModal({
   visible = false,
@@ -19,28 +35,59 @@ export default function ChatBotModal({
   messages = [],
   setMessages = () => {},
   isTyping = false,
-  renderMessage = () => null,
-  renderTypingIndicator = () => null,
+  renderMessage = null,
+  renderTypingIndicator = null,
 }) {
-  // Local state for input
   const [inputText, setInputText] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Handle sending a message
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-    const newMessage = {
-      id: Date.now().toString(),
-      text: inputText,
-      user: { fullName: "You" }, // example user
-    };
-    setMessages([newMessage, ...messages]); // prepend to messages
-    setInputText(""); // clear input
+  const handleSend = async () => {
+    try {
+      const email = await AsyncStorage.getItem("userEmail");
+      if (!email) return console.warn("User email not found");
+      if (!inputText.trim()) return;
+
+      const userMessage = {
+        id: Date.now().toString(),
+        text: inputText,
+        timestamp: new Date().toISOString(), // Add timestamp
+        user: { fullName: "You" },
+      };
+
+      setMessages([userMessage, ...messages]);
+      setInputText("");
+      setLoading(true);
+
+      const result = await sendMessageToChatBot({
+        message: userMessage.text,
+        conversationHistory: messages,
+        email,
+      });
+
+      if (result?.aiResponse) {
+        const botMessage = {
+          id: (Date.now() + 1).toString(),
+          text: result.aiResponse,
+          timestamp: new Date().toISOString(),
+          user: { fullName: "Ubuntu Safe Assistant" },
+        };
+        setMessages([botMessage, userMessage, ...messages]);
+      }
+    } catch (error) {
+      console.error("ChatBot error:", error);
+      const botMessage = {
+        id: (Date.now() + 1).toString(),
+        text: "Sorry, I couldn't process your query.",
+        timestamp: new Date().toISOString(),
+        user: { fullName: "Ubuntu Safe Assistant" },
+      };
+      setMessages([botMessage, ...messages]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle clearing chat
-  const handleClearChat = () => {
-    setMessages([]);
-  };
+  const handleClearChat = () => setMessages([]);
 
   return (
     <Modal
@@ -59,11 +106,12 @@ export default function ChatBotModal({
             style={tw`flex-row items-center justify-between p-5 border-b border-gray-300 bg-gray-100 rounded-t-2xl`}
           >
             <View style={tw`flex-row items-center`}>
-              <View
-                style={tw`w-10 h-10 rounded-full bg-blue-500 justify-center items-center mr-3`}
+              <Pressable
+                style={tw`mr-3 p-2 rounded-full bg-red-400`}
+                onPress={onClose}
               >
-                <MessageSquare size={20} color="#FFFFFF" />
-              </View>
+                <ArrowLeft size={20} color="white" />
+              </Pressable>
               <View>
                 <Text style={tw`text-lg font-bold text-slate-900`}>
                   Ubuntu Safe Assistant
@@ -73,24 +121,12 @@ export default function ChatBotModal({
                 </Text>
               </View>
             </View>
-
-            <View style={tw`flex-row items-center`}>
-              {/* Clear Chat */}
-              <Pressable
-                style={tw`w-8 h-8 rounded-full bg-slate-100 justify-center items-center mr-3`}
-                onPress={handleClearChat}
-              >
-                <Trash2 size={18} color="#64748B" />
-              </Pressable>
-
-              {/* Close */}
-              <Pressable
-                style={tw`w-8 h-8 rounded-full bg-slate-100 justify-center items-center`}
-                onPress={onClose}
-              >
-                <Text style={tw`text-slate-400 text-lg font-semibold`}>✕</Text>
-              </Pressable>
-            </View>
+            <Pressable
+              style={tw`w-8 h-8 rounded-full bg-slate-100 justify-center items-center`}
+              onPress={handleClearChat}
+            >
+              <Trash2 size={18} color="#64748B" />
+            </Pressable>
           </View>
 
           {/* Messages */}
@@ -100,11 +136,15 @@ export default function ChatBotModal({
             renderItem={
               renderMessage ||
               (({ item }) => (
-                <View style={tw`p-3 my-1 bg-gray-100 rounded-lg mx-4`}>
-                  <Text style={tw`text-slate-900 font-medium`}>
-                    {item.user.fullName}:
-                  </Text>
+                <View
+                  style={tw`p-3 my-1 bg-gray-100 rounded-lg mx-4 max-w-[80%] self-start`}
+                >
+                  {/* Message text */}
                   <Text style={tw`text-slate-700`}>{item.text}</Text>
+                  {/* Timestamp */}
+                  <Text style={tw`text-xs text-gray-400 mt-1 self-end`}>
+                    {formatTimeAgo(item.timestamp)}
+                  </Text>
                 </View>
               ))
             }
@@ -133,10 +173,9 @@ export default function ChatBotModal({
                 blurOnSubmit={false}
               />
             </View>
-
             <TouchableOpacity
               onPress={handleSend}
-              disabled={!inputText.trim()}
+              disabled={!inputText.trim() || loading}
               style={tw.style(
                 "w-12 h-12 rounded-full justify-center items-center",
                 inputText.trim() ? "bg-blue-500" : "bg-slate-300"
